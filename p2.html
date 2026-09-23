@@ -1,0 +1,23 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>PBRIDGE</title>
+<style>body{background:#fff;color:#000;font:12px monospace;word-break:break-all}</style></head>
+<body><div id="out">START</div>
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function w(t){document.getElementById('out').innerHTML += '<br>' + esc(t);}
+w('URL=' + location.href);
+var keys = Object.getOwnPropertyNames(window);
+var suspects = [];
+for (var i=0;i<keys.length;i++){var k=keys[i];
+  if (/bridge|Bridge|jsApi|JsApi|mqq|qimei|webso|Weixin|hippy|dtBridge|tbs|qb|_mqq|Interface|jsbridge/i.test(k)){
+    try{suspects.push(k+':'+typeof window[k]);}catch(e){}}}
+w('SUSPECTS(' + suspects.length + '): ' + suspects.join(' | '));
+window.JsBridge = { callback: function(id, res){ w('CB[' + id + ']=' + JSON.stringify(res)); } };
+function inv(s){ try { _mqqWebViewJSInterface.invoke(s); w('INV ' + s); } catch(e){ w('INV_ERR:' + e.message); } }
+setTimeout(function(){
+  inv('jsbridge://InputClickEvent/onClickInputCtrl#2001');
+  inv('jsbridge://UrlSaveVerifyV2/validCheck#2002');
+  inv('jsbridge://device/getNetworkInfo#2003');
+  inv('jsbridge://HtmlViewer/showHTML#2004');
+  setTimeout(function(){ w('DONE'); }, 4000);
+}, 800);
+</script></body></html>
