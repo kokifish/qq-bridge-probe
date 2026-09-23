@@ -1,0 +1,20 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>PRACE</title>
+<style>body{background:#fff;color:#000;font:11px monospace;word-break:break-all}</style></head>
+<body><div id="out">START</div>
+<script>
+var t0 = Date.now();
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function w(t){document.getElementById('out').innerHTML += '<br>' + esc(t);}
+function el(){return ((Date.now()-t0)/1000).toFixed(1);}
+w('URL=' + location.href + ' t=' + el());
+window.JsBridge = { callback: function(id, res){ w('CB[' + id + ']@' + el() + '=' + JSON.stringify(res)); } };
+var seq = 3000, n = 0;
+function tick(){
+  n++;
+  var id = seq++;
+  try { _mqqWebViewJSInterface.invoke('jsbridge://device/getNetworkInfo#' + id); }
+  catch(e){ w('INV_ERR@' + el() + ':' + e.message); clearInterval(iv); w('LOOP_DONE'); return; }
+  if (n >= 40) { clearInterval(iv); w('LOOP_DONE'); }
+}
+var iv = setInterval(tick, 500);
+</script></body></html>
