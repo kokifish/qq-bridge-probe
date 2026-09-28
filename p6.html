@@ -1,0 +1,26 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>PTBS</title>
+<style>body{background:#fff;color:#000;font:12px monospace;word-break:break-all}</style></head>
+<body><div id="out">START</div>
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function w(t){document.getElementById('out').innerHTML += '<br>' + esc(t);}
+w('URL=' + location.href);
+window.JsBridge = { callback: function(id, res){ w('CB[' + id + ']=' + JSON.stringify(res)); } };
+var ms = ['getMiniQBUA','getMiniQBVersionCode','getMiniQBVersionName','getQUA2','isTbsJsapiEnabled','jsAPITest','onReady','packages','uploadQQErrorpageShowLittleGame'];
+setTimeout(function(){
+  for (var i=0;i<ms.length;i++){
+    var m = ms[i];
+    try {
+      var f = window.tbsJs && window.tbsJs[m];
+      if (typeof f !== 'function') { w(m + ':not-func'); continue; }
+      var r;
+      try { r = f.call(window.tbsJs); } catch(e1) { r = 'THROW:' + e1.message; }
+      var rs;
+      try { rs = (r === undefined) ? 'undefined' : (typeof r === 'object' ? JSON.stringify(r) : String(r)); } catch(e2){ rs = 'unstringifiable'; }
+      w(m + '()=' + String(rs).slice(0,200));
+    } catch(e) { w(m + '_ERR:' + e.message); }
+  }
+  try { var r2 = window.tbs_bridge.nativeExec('{"a":1}'); w('nativeExec()=' + String(r2).slice(0,200)); } catch(e){ w('nativeExec_ERR:' + e.message); }
+  w('DONE');
+}, 800);
+</script></body></html>
